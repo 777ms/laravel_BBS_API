@@ -2,7 +2,6 @@
 ## 项目概述
 
 LaraBBS 是一个简洁的论坛应用，使用 Laravel5.5 编写而成。
-![](https://dn-phphub.qbox.me/uploads/images/201711/01/1/xcr6ijTArV.png)
 
 ## 功能如下
 
