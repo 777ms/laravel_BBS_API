@@ -21,6 +21,7 @@ class UsersController extends Controller
             return $this->response->errorUnauthorized('验证码错误');
         }
 
+        var_dump($verifyData['phone']);
         $user = User::create([
             'name' => $request->name,
             'phone' => $verifyData['phone'],

@@ -10,10 +10,23 @@ class VerificationCodesController extends Controller
 {
     public function store(VerificationCodeRequest $request, EasySms $easySms)
     {
-        $phone = $request->phone;
+        $captchaData = \Cache::get($request->captcha_key);
+
+        if(!$captchaData)
+        {
+            return $this->response->error('图片验证码已失效',422);
+        }
+
+        if(!hash_equals($captchaData['code'],$request->captcha_code))
+        {
+            \Cache::forget($request->captcha_key);
+            return $this->response->errorUnauthorized('验证码错误');
+        }
+
+        $phone = $captchaData['phone'];
 
         // 生成4位随机数，左侧补0
-        $code = str_pad(random_int(1, 9999), 4, 0, STR_PAD_LEFT);
+        $code  = str_pad(random_int(1, 9999), 4, 0, STR_PAD_LEFT);
 
         if(!app()->environment('production'))
         {
@@ -27,18 +40,18 @@ class VerificationCodesController extends Controller
                 ]);
             } catch (\GuzzleHttp\Exception\ClientException $exception) {
                 $response = $exception->getResponse();
-                $result = json_decode($response->getBody()->getContents(), true);
+                $result   = json_decode($response->getBody()->getContents(), true);
                 return $this->response->errorInternal($result['msg'] ?? '短信发送异常');
             }
         }
 
-        $key = 'verificationCode_'.str_random(15);
+        $key       = 'verificationCode_'.str_random(15);
         $expiredAt = now()->addMinutes(10);
         // 缓存验证码 10分钟过期。
         \Cache::put($key, ['phone' => $phone, 'code' => $code], $expiredAt);
 
         return $this->response->array([
-            'key' => $key,
+            'key'        => $key,
             'expired_at' => $expiredAt->toDateTimeString(),
         ])->setStatusCode(201);
     }
